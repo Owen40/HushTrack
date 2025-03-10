@@ -38,9 +38,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
-fun SignInScreen(navController: NavController) {
+fun SignInScreen(navController: NavController, authManager: FireBaseAuthManager) {
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -113,7 +117,21 @@ fun SignInScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { navController.navigate("home")},
+                onClick = {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val uid = authManager.loginUser(email, password)
+                        if (uid != null) {
+                            val userType = authManager.getUserType(uid)
+                            if (userType == "admin") {
+                                navController.navigate("home/$uid")
+                            } else {
+                                navController.navigate("home/$uid")
+                            }
+                        } else {
+                            errorMessage = "Login Failed"
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -142,6 +160,7 @@ fun SignInScreen(navController: NavController) {
                     Text("Register", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
             }
+            errorMessage?.let { Text(it, color = Color.Red) }
         }
     }
 }

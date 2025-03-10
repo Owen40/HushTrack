@@ -35,10 +35,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 @Composable
-fun FinishScreen(navController: NavController) {
+fun FinishScreen(navController: NavController, uid: String, authManager: FireBaseAuthManager) {
     val context = LocalContext.current
     Box(
         modifier = Modifier
@@ -83,10 +86,10 @@ fun FinishScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            var name by remember { mutableStateOf("") }
+            var fullname by remember { mutableStateOf("") }
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it},
+                value = fullname,
+                onValueChange = { fullname = it},
                 label = { Text("Name") },
                 singleLine = true,
                 modifier = Modifier
@@ -119,7 +122,12 @@ fun FinishScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(30.dp))
             
             Button(
-                onClick = { navController.navigate("home")},
+                onClick = {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        authManager.saveUserData(uid, username, fullname, phone)
+                        navController.navigate("home")
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)

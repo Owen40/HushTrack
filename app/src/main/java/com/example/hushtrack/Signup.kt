@@ -41,9 +41,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
-fun SignUpScreen(navController: NavController) {
+fun SignUpScreen(navController: NavController, authManager: FireBaseAuthManager) {
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -105,7 +109,16 @@ fun SignUpScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { navController.navigate("finish")},
+                onClick = {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val uid = authManager.registerUser(email, password)
+                        if (uid != null) {
+                            navController.navigate("finish/$uid")
+                        } else {
+                            errorMessage = "Registration Failed"
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
@@ -134,6 +147,8 @@ fun SignUpScreen(navController: NavController) {
                    Text("Log in", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                }
            }
+
+            errorMessage?.let {Text(it, color = Color.Red)}
         }
     }
 }
