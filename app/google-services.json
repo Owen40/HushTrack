@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "236921479998",
+    "project_id": "hushtrack-61bdc",
+    "storage_bucket": "hushtrack-61bdc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:236921479998:android:39ad70f3c8f31d886ac26f",
+        "android_client_info": {
+          "package_name": "com.example.HushTrack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUvN3TwsHpdc4j8PdrUCeAOejia61yCZw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
