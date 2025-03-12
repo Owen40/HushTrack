@@ -22,6 +22,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.Modifier
@@ -33,7 +38,17 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen(uid: String,  navController: NavController, authManager: FireBaseAuthManager) {
+    var username by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        val userDetails = authManager.getUserDetails(uid)
+        userDetails?.let {
+            username = it.first
+            phone = it.second
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -73,7 +88,7 @@ fun ProfileScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "@Listless",
+                text = "$username",
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp
@@ -82,7 +97,7 @@ fun ProfileScreen(navController: NavController) {
             Spacer(modifier = Modifier.padding(5.dp))
 
             Text(
-                text = "+254111755911",
+                text = "$phone",
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp
             )
@@ -108,7 +123,12 @@ fun ProfileScreen(navController: NavController) {
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = {},
+                onClick = {
+                    authManager.logoutUser()
+                    navController.navigate("landing") {
+                        popUpTo("profile") { inclusive = true}
+                    }
+                },
                 modifier = Modifier
                     .padding(bottom = 20.dp)
                     .fillMaxWidth()

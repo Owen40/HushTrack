@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 
 
 @Composable
-fun FinishScreen(navController: NavController, uid: String, authManager: FireBaseAuthManager) {
+fun FinishScreen( uid: String, navController: NavController, authManager: FireBaseAuthManager) {
     val context = LocalContext.current
     Box(
         modifier = Modifier

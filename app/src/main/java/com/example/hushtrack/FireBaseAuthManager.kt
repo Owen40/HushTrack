@@ -1,5 +1,6 @@
 package com.example.hushtrack
 
+import android.annotation.SuppressLint
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -19,6 +20,7 @@ class FireBaseAuthManager {
     }
 
 //    Store onboarding Data
+    @SuppressLint("SuspiciousIndentation")
     suspend fun saveUserData(uid: String, username: String, fullname: String, phone: String) {
         val user = hashMapOf(
             "username" to username,
@@ -57,5 +59,22 @@ class FireBaseAuthManager {
         } catch (e: Exception) {
             null
         }
+    }
+
+//    Get User Details
+    suspend fun getUserDetails(uid: String): Pair<String, String>? {
+        return try {
+            val doc = db.collection("users").document(uid).get().await()
+            val username = doc.getString("username") ?: ""
+            val phone = doc.getString("phone") ?: ""
+            Pair(username, phone)
+         } catch (e: Exception) {
+             null
+         }
+    }
+
+//    Logout Functionality
+    fun logoutUser() {
+        auth.signOut()
     }
 }
