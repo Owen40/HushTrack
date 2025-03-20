@@ -11,7 +11,7 @@ fun AppNavigation() {
     val navController = rememberNavController()
     val authManager = FireBaseAuthManager()
 
-    NavHost(navController = navController, startDestination = "new-report") {
+    NavHost(navController = navController, startDestination = "Landing") {
         composable("Landing") { LandingScreen(navController) }
         composable("signin") { SignInScreen(navController, authManager) }
         composable("signup") { SignUpScreen(navController, authManager) }
@@ -25,6 +25,7 @@ fun AppNavigation() {
             ProfileScreen(uid = uid, navController = navController, authManager = authManager)
         }
         composable("home") { MajorScreen(navController = navController) }
+        composable("admin") { AdminScreen(navController = navController) }
         composable("settings") { SettingsScreen(navController = navController) }
         composable("resources") { ResourcesScreen(navController = navController) }
         composable("notifications") { NotificationScreen(navController = navController) }

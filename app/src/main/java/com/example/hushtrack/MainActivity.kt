@@ -27,6 +27,10 @@ class MainActivity : ComponentActivity() {
 //                SupportScreen()
 //                NotificationScreen()
 //                ReportScreen()
+//                ClientReportDescScreen()
+//                EditProfileScreen()
+//                AdminScreen()
+//                manageReportScreen()
             }
         }
     }
