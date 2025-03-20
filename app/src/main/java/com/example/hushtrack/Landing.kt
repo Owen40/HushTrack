@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -67,18 +68,26 @@ fun LandingScreen(navController: NavController) {
                     .padding(bottom = 30.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedButton(
+                Button(
                     onClick = { navController.navigate("signin") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF556B2F),
+                        contentColor = Color(0xFFDED6C8)
+                    )
                 ) {
-                    Text(text = "Log in", color = Color.Black)
+                    Text(text = "Log in")
                 }
 
                 Button(
                     onClick = {
                         navController.navigate("signup")
                         Toast.makeText(context, "Registered Successfully", Toast.LENGTH_LONG).show() },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF556B2F),
+                        contentColor = Color(0xFFDED6C8)
+                    )
                 ) {
                     Text(text = "Create an account")
                 }
