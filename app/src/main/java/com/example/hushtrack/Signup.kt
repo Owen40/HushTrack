@@ -1,6 +1,7 @@
 package com.example.hushtrack
 
 import android.graphics.drawable.Icon
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +45,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SignUpScreen(navController: NavController, authManager: FireBaseAuthManager) {
@@ -112,10 +114,17 @@ fun SignUpScreen(navController: NavController, authManager: FireBaseAuthManager)
                 onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
                         val uid = authManager.registerUser(email, password)
+
+                        Log.d("SignUpScreen", "Registered UID: $uid")
+
                         if (uid != null) {
-                            navController.navigate("finish/$uid")
+                            withContext(Dispatchers.Main) {
+                                navController.navigate("finish/$uid")
+                            }
                         } else {
-                            errorMessage = "Registration Failed"
+                            withContext(Dispatchers.Main) {
+                                errorMessage = "Registration Failed"
+                            }
                         }
                     }
                 },

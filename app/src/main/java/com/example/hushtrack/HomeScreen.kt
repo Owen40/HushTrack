@@ -1,5 +1,6 @@
 package com.example.hushtrack
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,7 +54,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 
 @Composable
-fun MajorScreen(modifier: Modifier = Modifier, navController: NavController) {
+fun MajorScreen(modifier: Modifier = Modifier, navController: NavController, uid: String, authManager: FireBaseAuthManager) {
     val drawerState = rememberDrawerState(
         initialValue = DrawerValue.Closed
     )
@@ -77,11 +78,14 @@ fun MajorScreen(modifier: Modifier = Modifier, navController: NavController) {
                             }
                         }
                     },
-                    onProfileClick = { navController.navigate("profile")}
+                    onProfileClick = {
+                        Log.d("HomeScreen", "Navigating to profile for UID: $uid")
+                        navController.navigate("profile/$uid")
+                    }
                     )
             }
         ) { padding ->
-            ScreenContent(modifier = Modifier.padding(padding))
+            ScreenContent(modifier = Modifier.padding(padding), navController = navController, uid = uid, authManager = authManager)
         }
     }
 }
@@ -193,12 +197,13 @@ fun DrawerContent(modifier: Modifier = Modifier, navController: NavController) {
 }
 
 @Composable
-fun ScreenContent(modifier: Modifier = Modifier,) {
-//    var username by remember { mutableStateOf("") }
+fun ScreenContent(modifier: Modifier = Modifier, uid: String, authManager: FireBaseAuthManager, navController: NavController) {
+    var username by remember { mutableStateOf("") }
 
-//    LaunchedEffect(Unit) {
-//        username = authManager.getUsername(uid) ?: "User"
-//    }
+    LaunchedEffect(Unit) {
+        username = authManager.getUsername(uid) ?: "User"
+        Log.d("HomeScreen", "Fetched username: $username")
+    }
 //   Add the contents of the screen here
     Column(
         modifier = Modifier
@@ -209,7 +214,7 @@ fun ScreenContent(modifier: Modifier = Modifier,) {
         horizontalAlignment = Alignment.Start
     ) {
         Text(
-            text = "Welcome ",
+            text = "Welcome $username",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -219,7 +224,7 @@ fun ScreenContent(modifier: Modifier = Modifier,) {
         Spacer(modifier = Modifier.height(40.dp))
 
         OutlinedButton(
-            onClick = { /* navController.navigate("new-report") */},
+            onClick = {  navController.navigate("new-report/$uid") },
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = MaterialTheme.colorScheme.primary

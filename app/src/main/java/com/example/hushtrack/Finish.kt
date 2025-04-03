@@ -1,5 +1,6 @@
 package com.example.hushtrack
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -38,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 @Composable
@@ -124,8 +126,16 @@ fun FinishScreen( uid: String, navController: NavController, authManager: FireBa
             Button(
                 onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
+                        Log.d("FinishScreen", "Saving Data for UID: $uid")
+
                         authManager.saveUserData(uid, username, fullname, phone)
-                        navController.navigate("home")
+
+                        withContext(Dispatchers.Main) {
+                            Log.d("FinishScreen", "Navigating to home for UID: $uid")
+                            navController.navigate("home/$uid") {
+                                popUpTo("finish") {inclusive = true}
+                            }
+                        }
                     }
                 },
                 modifier = Modifier

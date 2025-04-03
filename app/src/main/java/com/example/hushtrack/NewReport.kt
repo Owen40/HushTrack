@@ -52,22 +52,29 @@ import com.example.hushtrack.utils.startPlayback
 import com.example.hushtrack.utils.startRecording
 import com.example.hushtrack.utils.stopPlayback
 import com.example.hushtrack.utils.stopRecording
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
-fun ReportScreen(navController: NavController, context: Context) {
+fun ReportScreen(navController: NavController,  context: Context, uid: String, authManager: FireBaseAuthManager) {
     val recorder = remember { MediaRecorder() }
     val player = remember { MediaPlayer() }
-    val audioFile = remember { File(context.cacheDir, "audio.mp3") }
+    val audioFile = remember { mutableStateOf(File(context.cacheDir, "audio_${System.currentTimeMillis()}.mp4")) }
     var isRecording by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(false) }
+    var isUploading by remember { mutableStateOf(false) }
 
 //    Permission Launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted ->
             if (granted) {
-                startRecording(recorder, audioFile)
+                startRecording(recorder, audioFile.value)
             } else {
                 Toast.makeText(context, "Permission required!", Toast.LENGTH_LONG).show()
             }
@@ -131,7 +138,7 @@ fun ReportScreen(navController: NavController, context: Context) {
                         != PackageManager.PERMISSION_GRANTED) {
                         permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     } else {
-                        startRecording(recorder, audioFile)
+                        startRecording(recorder, audioFile.value)
                         isRecording = true
                     }
                 },
@@ -142,6 +149,7 @@ fun ReportScreen(navController: NavController, context: Context) {
                 ),
                 modifier = Modifier
                     .height(51.dp)
+                    .fillMaxWidth(0.4f),
             ) {
                 Text(
                     text = "Record"
@@ -160,6 +168,7 @@ fun ReportScreen(navController: NavController, context: Context) {
                 ),
                 modifier = Modifier
                     .height(51.dp)
+                    .fillMaxWidth(0.8f)
             ) {
                 Text(
                     text = "Stop Recording"
@@ -167,7 +176,7 @@ fun ReportScreen(navController: NavController, context: Context) {
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(35.dp))
 
         Row(
             modifier = Modifier
@@ -176,10 +185,10 @@ fun ReportScreen(navController: NavController, context: Context) {
         ) {
             OutlinedButton(
                 onClick = {
-                    startPlayback(player, audioFile)
+                    startPlayback(player, audioFile.value)
                     isPlaying = true
                 },
-                enabled = !isPlaying && audioFile.exists(),
+                enabled = !isPlaying && audioFile.value.exists(),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary
@@ -215,19 +224,20 @@ fun ReportScreen(navController: NavController, context: Context) {
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
         Button(
             onClick = {
-                if (audioFile.exists()) {
-                    audioFile.delete()
+                if (audioFile.value.exists()) {
+                    audioFile.value.delete()
                     Toast.makeText(context, "Recording Deleted", Toast.LENGTH_LONG).show()
                 }
             },
-            modifier = Modifier.fillMaxWidth(0.8f),
+            modifier = Modifier.fillMaxWidth().height(51.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFFCDD2)
-            )
+                containerColor = Color.Red
+            ),
+            shape = RoundedCornerShape(10.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Delete,
@@ -238,16 +248,34 @@ fun ReportScreen(navController: NavController, context: Context) {
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Button(
-            onClick = {},
-            modifier = Modifier.fillMaxWidth(0.8f)
-                .background(MaterialTheme.colorScheme.primary)
+        OutlinedButton(
+            onClick = {
+                isUploading = true
+                CoroutineScope(Dispatchers.IO).launch {
+                    val downloadUrl = authManager.uploadAudioFile(uid, audioFile.value)
+                    val encodeUrl = URLEncoder.encode(downloadUrl, StandardCharsets.UTF_8.toString())
+                    withContext(Dispatchers.Main) {
+                        isUploading = false
+                        if(downloadUrl != null) {
+                            navController.navigate("new-report-details/$uid/$encodeUrl")
+                        } else {
+                            Toast.makeText(context, "Upload Failed", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            },
+            enabled = audioFile.value.exists() && !isUploading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 30.dp)
                 .height(51.dp),
-            shape = RoundedCornerShape(50),
+            shape = RoundedCornerShape(15.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            ),
         ) {
             Text(
-                text = "Continue",
-                color = MaterialTheme.colorScheme.onPrimary
+                if (isUploading) "Uploading..." else "Continue"
             )
         }
     }

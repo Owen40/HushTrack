@@ -1,9 +1,14 @@
 package com.example.hushtrack
 
 import android.annotation.SuppressLint
+import android.net.Uri
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
+import java.io.File
 
 class FireBaseAuthManager {
     private val auth = FirebaseAuth.getInstance()
@@ -45,9 +50,12 @@ class FireBaseAuthManager {
     suspend fun getUserType(uid: String): String? {
         return try {
             val doc = db.collection("users").document(uid).get().await()
-            doc.getString("UserType")
+            val userType = doc.getString("userType")?.lowercase() ?: "client"
+            Log.d("FirebaseAuthManager", "Retrieved userType for UID $uid: $userType")
+            userType
         } catch (e: Exception) {
-            null
+            Log.e("FirebaseAuthManager", "Error getting user type: ${e.message}")
+            "client"
         }
     }
 
@@ -71,6 +79,69 @@ class FireBaseAuthManager {
          } catch (e: Exception) {
              null
          }
+    }
+
+//    Get User Info
+    suspend fun getUserInfo(uid: String): Map<String, String>? {
+        return try {
+            val doc = db.collection("users").document(uid).get().await()
+            mapOf(
+                "name" to (doc.getString("fullname") ?: ""),
+                "email" to (auth.currentUser?.email ?: "")
+            )
+        } catch (e: Exception) {
+            Log.e("FirebaseAuthManager", "Error fetching user info: ${e.message}")
+            null
+        }
+    }
+
+//    Update User Profile
+    suspend fun updateUserProfile(uid: String, newUsername: String, newPhone: String): Boolean {
+        return try {
+            db.collection("suers").document(uid).update(
+                mapOf(
+                    "username" to newUsername,
+                    "phone" to newPhone
+                )
+            ).await()
+            Log.d("FirebaseAuthManager", "Profile updated Successfully for UID: $uid")
+            true
+        } catch (e: Exception) {
+            Log.e("FirebaseAuthManager", "Error updating profile: ${e.message}")
+            false
+        }
+    }
+
+//    Upload Audio Functionality
+    suspend fun uploadAudioFile(uid: String, audioFile: File): String {
+        return try {
+            val storageRef = FirebaseStorage.getInstance().reference.child("audio_reports/$uid/${audioFile.name}")
+            val uploadTask = storageRef.putFile(Uri.fromFile(audioFile)).await()
+            storageRef.downloadUrl.await().toString()
+        } catch (e: Exception) {
+            Log.e("FirebaseAuthManager", "Error uploading audio: ${e.message}")
+            null
+            toString()
+        }
+    }
+
+//    Upload Report Functionality
+    suspend fun uploadReport(uid: String, noiseType: String, location: String, description: String, audioUrl: String): Boolean {
+        return try {
+            val report = hashMapOf(
+                "uid" to uid,
+                "noiseType" to noiseType,
+                "location" to location,
+                "description" to description,
+                "audioUrl" to audioUrl,
+                "timestamp" to FieldValue.serverTimestamp()
+            )
+            FirebaseFirestore.getInstance().collection("Reports").add(report).await()
+            true
+        } catch (e: Exception) {
+            Log.e("FirebaseAuthManager", "Error uploading Report: ${e.message}")
+            false
+        }
     }
 
 //    Logout Functionality

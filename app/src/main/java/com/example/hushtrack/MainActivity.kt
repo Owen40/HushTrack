@@ -26,11 +26,12 @@ class MainActivity : ComponentActivity() {
 //                MajorScreen()
 //                SupportScreen()
 //                NotificationScreen()
-//                ReportScreen()
+//                ReportScreen(context = this)
 //                ClientReportDescScreen()
 //                EditProfileScreen()
 //                AdminScreen()
 //                manageReportScreen()
+
             }
         }
     }

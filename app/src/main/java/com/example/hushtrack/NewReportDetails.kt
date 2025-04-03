@@ -1,5 +1,7 @@
 package com.example.hushtrack
 
+import android.widget.Toast
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,14 +36,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClientReportDescScreen() {
+fun ClientReportDescScreen(navController: NavController, uid: String, downloadUrl: String, authManager: FireBaseAuthManager, context: Context) {
     var noiseType by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var noiseDescription by remember { mutableStateOf("") }
     var isDropdownExpanded by remember { mutableStateOf(false ) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -161,20 +171,28 @@ fun ClientReportDescScreen() {
 
             OutlinedButton(
                 onClick = {
-                    println("Noise Type: $noiseType, Location: $location, Noise Description: $noiseDescription")
+//                    println("Noise Type: $noiseType, Location: $location, Noise Description: $noiseDescription")
+                    isSubmitting = true
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val decodeUrl = URLDecoder.decode(downloadUrl, StandardCharsets.UTF_8.toString())
+                        val success = authManager.uploadReport(uid, noiseType, location, noiseDescription, decodeUrl)
+                        withContext(Dispatchers.Main) {
+                            isSubmitting = false
+                            if (success) {
+                                navController.navigate("home/$uid")
+                            } else {
+                                Toast.makeText(context, "Submission Failed", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
                 },
+                enabled = !isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 30.dp)
             ) {
-                Text("Submit")
+                Text( if (isSubmitting) "Submitting..." else "Submit")
             }
         }
     }
-}
-
-@Preview(showSystemUi = true)
-@Composable
-fun ReportPreview() {
-    ClientReportDescScreen()
 }

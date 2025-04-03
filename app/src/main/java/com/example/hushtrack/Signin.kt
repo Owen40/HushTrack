@@ -1,5 +1,6 @@
 package com.example.hushtrack
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SignInScreen(navController: NavController, authManager: FireBaseAuthManager) {
@@ -120,15 +122,31 @@ fun SignInScreen(navController: NavController, authManager: FireBaseAuthManager)
                 onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
                         val uid = authManager.loginUser(email, password)
+
+                        Log.d("SignInScreen", "Logged in UID: $uid")
+
                         if (uid != null) {
                             val userType = authManager.getUserType(uid)
-                            if (userType == "admin") {
-                                navController.navigate("home/$uid")
-                            } else {
-                                navController.navigate("home/$uid")
+
+                            Log.d("SignInScreen", "UserType: $userType")
+
+                            withContext(Dispatchers.Main) {
+                                if (userType == "admin") {
+                                    Log.d("SignInScreen", "Navigating to Admin Screen")
+                                    navController.navigate("admin/$uid") {
+                                        popUpTo("signin") { inclusive = true}
+                                    }
+                                } else {
+                                    Log.d("SignInScreen", "Navigating to Home Screen")
+                                    navController.navigate("home/$uid") {
+                                        popUpTo("signin") { inclusive = true}
+                                    }
+                                }
                             }
                         } else {
-                            errorMessage = "Login Failed"
+                            withContext(Dispatchers.Main) {
+                                errorMessage = "Login Failed"
+                            }
                         }
                     }
                 },

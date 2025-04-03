@@ -62,7 +62,7 @@ fun ProfileScreen(uid: String,  navController: NavController, authManager: FireB
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
-                onClick = {},
+                onClick = { navController.popBackStack()},
                 modifier = Modifier.padding(start = 2.dp)
             ) {
                 Icon(
@@ -109,7 +109,9 @@ fun ProfileScreen(uid: String,  navController: NavController, authManager: FireB
             Spacer(modifier = Modifier.padding(20.dp))
 
             OutlinedButton(
-                onClick = {},
+                onClick = {
+                    navController.navigate("Editprofile/$uid")
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),

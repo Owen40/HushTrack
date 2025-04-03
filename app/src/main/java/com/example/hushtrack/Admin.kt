@@ -1,5 +1,6 @@
 package com.example.hushtrack
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,7 +53,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 
 @Composable
-fun AdminScreen(modifier: Modifier = Modifier, navController: NavController) {
+fun AdminScreen(modifier: Modifier = Modifier, navController: NavController, uid: String, authManager: FireBaseAuthManager) {
     val drawerState = rememberDrawerState(
         initialValue = DrawerValue.Closed
     )
@@ -76,7 +77,10 @@ fun AdminScreen(modifier: Modifier = Modifier, navController: NavController) {
                             }
                         }
                     },
-                    onProfileClick = { navController.navigate("profile")}
+                    onProfileClick = {
+                        Log.d("AdminScreen", "Navigating to profile for UID: $uid")
+                        navController.navigate("profile/$uid")
+                    }
                 )
             }
         ) { padding ->

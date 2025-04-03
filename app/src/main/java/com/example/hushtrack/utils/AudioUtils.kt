@@ -2,16 +2,18 @@ package com.example.hushtrack.utils
 
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.util.Log
 import java.io.File
 
 fun startRecording(recorder: MediaRecorder, file: File) {
     recorder.apply {
         setAudioSource(MediaRecorder.AudioSource.MIC)
-        setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-        setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+        setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
         setOutputFile(file.absolutePath)
         prepare()
         start()
+        Log.d("AudioUtils", "Recording Started: ${file.absolutePath}")
     }
 }
 

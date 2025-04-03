@@ -51,14 +51,14 @@ fun LandingScreen(navController: NavController) {
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-//            Spacer(modifier = Modifier.height(40.dp))
-//
-//            Text(
-//                text = "HushTrack",
-//                fontSize = 30.sp,
-//                fontWeight = FontWeight.Bold,
-//                color = MaterialTheme.colorScheme.onBackground
-//            )
+            Spacer(modifier = Modifier.height(40.dp))
+
+            Text(
+                text = "HushTrack",
+                fontSize = 50.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF556B2F)
+            )
 
             Spacer(modifier = Modifier.weight(1f))
 
