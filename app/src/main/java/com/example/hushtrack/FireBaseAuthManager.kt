@@ -3,6 +3,8 @@ package com.example.hushtrack
 import android.annotation.SuppressLint
 import android.net.Uri
 import android.util.Log
+import com.example.hushtrack.ReportLogic.Report
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -134,7 +136,8 @@ class FireBaseAuthManager {
                 "location" to location,
                 "description" to description,
                 "audioUrl" to audioUrl,
-                "timestamp" to FieldValue.serverTimestamp()
+                "timestamp" to Timestamp.now(),
+                "status" to "pending Review"
             )
             FirebaseFirestore.getInstance().collection("Reports").add(report).await()
             true
@@ -142,6 +145,20 @@ class FireBaseAuthManager {
             Log.e("FirebaseAuthManager", "Error uploading Report: ${e.message}")
             false
         }
+    }
+
+
+//    Listen to Reports
+    fun listenToAllReports() {
+        val reports = mutableListOf<Report>()
+        FirebaseFirestore.getInstance().collection("Reports")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null ) return@addSnapshotListener
+                reports.addAll(snapshot.documents.mapNotNull { doc ->
+                    val report = doc.toObject(Report::class.java)
+                    report?.copy(id = doc.id)
+                })
+            }
     }
 
 //    Logout Functionality

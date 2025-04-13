@@ -1,5 +1,6 @@
 package com.example.hushtrack
 
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -40,6 +41,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -50,7 +53,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.hushtrack.ReportLogic.Report
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.gson.Gson
+import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.setValue
+import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun AdminScreen(modifier: Modifier = Modifier, navController: NavController, uid: String, authManager: FireBaseAuthManager) {
@@ -197,17 +210,55 @@ fun AdminDrawerContent(modifier: Modifier = Modifier, navController: NavControll
 
 @Composable
 fun AdminScreenContent(modifier: Modifier = Modifier,navController: NavController) {
-    val reports = listOf(
-        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
-        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
-        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
-        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
-        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
-        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani")
-    )
+//    val reports = listOf(
+//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
+//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
+//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
+//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
+//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
+//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani")
+//    )
+    val firestore = FirebaseFirestore.getInstance()
+//    val reports by remember { mutableStateOf<List<Report>>(emptyList()) }
 
     val filterOptions = listOf("All", "Pending Review", "Action Taken", "Resolved", "Dismissed")
     val scrollState = rememberScrollState()
+    val reports = remember { mutableStateListOf<Report>() }
+    var selectedFilter by remember { mutableStateOf("All") }
+    val allReports by remember { mutableStateOf(listOf<Report>()) }
+
+    val filteredReports = remember(selectedFilter, allReports) {
+        if (selectedFilter == "All") allReports
+        else allReports.filter { it.status == selectedFilter}
+    }
+
+    LaunchedEffect(Unit) {
+        val firestore = FirebaseFirestore.getInstance()
+        firestore.collection("Reports")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("AdminScreen", "Firestore Error: ", error)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && !snapshot.isEmpty) {
+                    val fetchedReports = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            val report = doc.toObject(Report::class.java)
+                            report?.copy(id = doc.id)
+                        } catch (e: Exception) {
+                            Log.e("AdminScreen", "Data Parsing error: ", e)
+                            null
+                        }
+                    }
+                    reports.addAll(fetchedReports)
+
+                    Log.d("AdminScreen", "Fetched ${fetchedReports.size} reports")
+                } else {
+                    Log.d("AdminScreen", "No reports Found")
+                }
+            }
+    }
 
     Column(
         modifier = Modifier
@@ -228,19 +279,50 @@ fun AdminScreenContent(modifier: Modifier = Modifier,navController: NavControlle
                 .horizontalScroll(scrollState),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            filterOptions.forEach{ filter ->
-                OutlinedButton(
-                    onClick = {},
-                    shape = RoundedCornerShape(10.dp),
+            filterOptions.forEach { filter ->
+                val isSelected = filter == selectedFilter
+                val buttonModifier = Modifier.padding(end = 8.dp)
 
+                if (isSelected) {
+                    Button(
+                        onClick = { selectedFilter = filter },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = buttonModifier
+                    ) {
+                        Text(filter)
+                    }
+                } else {
+                    OutlinedButton(
+                    onClick = { selectedFilter = filter},
+                    shape = RoundedCornerShape(10.dp),
+//
                 ) { Text(filter)}
+                }
             }
+//            filterOptions.forEach{ filter ->
+//                OutlinedButton(
+//                    onClick = {},
+//                    shape = RoundedCornerShape(10.dp),
+//
+//                ) { Text(filter)}
+//            }
         }
 
+//        LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
+//            items(reports) { report ->
+//                navController.navigate("manage-report/${report.id}/")
+//            }
+//        }
+
         LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
-            items(reports.size) { index ->
-                ReportCard(reports[index]) {
-                    navController.navigate("settings")
+            items(reports) { report ->
+                val reportJson = Uri.encode(Gson().toJson(report))
+//                val reportJson = URLEncoder.encode(Gson().toJson(report), StandardCharsets.UTF_8.toString())
+                ReportCard(report = report) {
+//                    Log.d("AdminScreen", "Navigating to manage-report/$reportJson")
+                    Log.d("AdminScreen", "Navigating to manage-report/${report.id}")
+//                    navController.navigate("manage-report/$reportJson")
+                    navController.navigate("manage-report/${report.id}")
                 }
             }
         }

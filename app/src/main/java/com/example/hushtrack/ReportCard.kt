@@ -16,6 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.hushtrack.ReportLogic.Report
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ReportCard(report: Report, onClick: () -> Unit) {
@@ -45,7 +49,10 @@ fun ReportCard(report: Report, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(report.reporter)
-                Text(report.timestamp)
+//                Text(report.timestamp)
+                val formattedDate = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+                    .format(Date(report.formattedTimeStamp))
+                Text(formattedDate)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
