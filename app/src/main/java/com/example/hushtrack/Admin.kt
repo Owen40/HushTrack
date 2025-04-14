@@ -1,7 +1,10 @@
 package com.example.hushtrack
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.net.Uri
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,8 +68,14 @@ import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun AdminScreen(modifier: Modifier = Modifier, navController: NavController, uid: String, authManager: FireBaseAuthManager) {
+    val activity = (LocalContext.current as? Activity)
+
+    BackHandler {
+        activity?.finish()
+    }
     val drawerState = rememberDrawerState(
         initialValue = DrawerValue.Closed
     )
@@ -118,7 +127,8 @@ fun AdminDrawerContent(modifier: Modifier = Modifier, navController: NavControll
         Text(
             text = "HushTrack",
             fontSize = 24.sp,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            fontWeight = FontWeight.Bold
         )
 
         HorizontalDivider()
@@ -126,13 +136,6 @@ fun AdminDrawerContent(modifier: Modifier = Modifier, navController: NavControll
         Spacer(modifier = Modifier.height(5.dp))
 
         NavigationDrawerItem(
-            icon = {
-                Icon(
-                    imageVector = Icons.Rounded.Settings,
-                    contentDescription = "Account",
-                    modifier = Modifier.size(24.dp)
-                )
-            },
             label = {
                 Text(
                     text = "Settings",
@@ -148,13 +151,6 @@ fun AdminDrawerContent(modifier: Modifier = Modifier, navController: NavControll
         Spacer(modifier = Modifier.height(3.dp))
 
         NavigationDrawerItem(
-            icon = {
-                Icon(
-                    imageVector = Icons.Rounded.Notifications,
-                    contentDescription = "Notifications",
-                    modifier = Modifier.size(24.dp)
-                )
-            },
             label = {
                 Text(
                     text = "Notifications",
@@ -210,16 +206,7 @@ fun AdminDrawerContent(modifier: Modifier = Modifier, navController: NavControll
 
 @Composable
 fun AdminScreenContent(modifier: Modifier = Modifier,navController: NavController) {
-//    val reports = listOf(
-//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
-//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
-//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
-//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
-//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani"),
-//        Report("@Username", "2025-02-05", "Pending Review", "Equity, Kasarani")
-//    )
     val firestore = FirebaseFirestore.getInstance()
-//    val reports by remember { mutableStateOf<List<Report>>(emptyList()) }
 
     val filterOptions = listOf("All", "Pending Review", "Action Taken", "Resolved", "Dismissed")
     val scrollState = rememberScrollState()
@@ -317,11 +304,8 @@ fun AdminScreenContent(modifier: Modifier = Modifier,navController: NavControlle
         LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
             items(reports) { report ->
                 val reportJson = Uri.encode(Gson().toJson(report))
-//                val reportJson = URLEncoder.encode(Gson().toJson(report), StandardCharsets.UTF_8.toString())
                 ReportCard(report = report) {
-//                    Log.d("AdminScreen", "Navigating to manage-report/$reportJson")
                     Log.d("AdminScreen", "Navigating to manage-report/${report.id}")
-//                    navController.navigate("manage-report/$reportJson")
                     navController.navigate("manage-report/${report.id}")
                 }
             }
@@ -357,7 +341,7 @@ fun AdminTopBar(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "HushTrack", textAlign = TextAlign.Center)
+                Text(text = "HushTrack", textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
             }
         },
         actions = {

@@ -2,6 +2,9 @@ package com.example.hushtrack
 
 import android.media.MediaPlayer
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.provider.MediaStore.Audio.Media
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -24,6 +27,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -44,7 +48,10 @@ import com.example.hushtrack.ReportLogic.Report
 import com.example.hushtrack.utils.startPlayback
 import com.example.hushtrack.utils.stopPlayback
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.delay
 import java.io.File
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun manageReportScreen(navController: NavController, reportId: String/* report: Report */) {
@@ -55,9 +62,15 @@ fun manageReportScreen(navController: NavController, reportId: String/* report: 
     val context = LocalContext.current
     var selectedStatus by remember { mutableStateOf("Under Investigation") }
     val statusOptions = listOf("Pending Review", "Under Investigation", "Resolved", "Dismissed")
-    val mediaPlayer = remember { MediaPlayer() }
+//    var mediaPlayer: MediaPlayer? by remember { mutableStateOf(null) }
+    var mediaPlayer = remember { MediaPlayer() }
     var isLoading by remember { mutableStateOf(true) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    var isPlaying by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf(0f) }
+    var duration by remember { mutableStateOf(1) }
+    var playbackPosition by remember { mutableStateOf(0) }
+    val handler = Handler(Looper.getMainLooper())
 
     fun fetchReport() {
         isLoading = true
@@ -80,6 +93,20 @@ fun manageReportScreen(navController: NavController, reportId: String/* report: 
                 loadError = exception.localizedMessage
                 isLoading = false
             }
+    }
+
+    LaunchedEffect(isPlaying) {
+        while (isPlaying && mediaPlayer != null) {
+            mediaPlayer?.let {
+                if (it.isPlaying) {
+                    val current = it.currentPosition
+                    val total = it.duration.takeIf { d -> d > 0 } ?: 1
+                    duration = total
+                    progress = current.toFloat() / total.toFloat()
+                }
+            }
+            delay(500)
+        }
     }
 
     LaunchedEffect(reportId) {
@@ -196,6 +223,24 @@ fun manageReportScreen(navController: NavController, reportId: String/* report: 
                     report?.let { InfoBox(title = "Report Decription", value = it.description) }
 
                     Spacer(modifier = Modifier.height(70.dp))
+
+                    if (!report?.audioUrl.isNullOrEmpty()) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            LinearProgressIndicator(
+                                progress = progress,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                text = "${playbackPosition / 1000}s",
+                                modifier = Modifier.align(Alignment.End),
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    }
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -203,14 +248,37 @@ fun manageReportScreen(navController: NavController, reportId: String/* report: 
                     ) {
                         OutlinedButton(
                             onClick = {
+//                                try {
+//                                    Log.d("ManageReportScreen", "Playing audio: ${report?.audioUrl}")
+//                                    mediaPlayer.reset()
+//                                    mediaPlayer.setDataSource(report?.audioUrl ?: "")
+//                                    mediaPlayer.prepare()
+//                                    mediaPlayer.start()
+//                                } catch (e: Exception) {
+//                                    Log.e("ManageReportScreen", "Audio Playback Failed", e)
+//                                }
+//                                if (!isPlaying && report.audioUrl.isNotEmpty()) {
+//                                    mediaPlayer = MediaPlayer().apply {
+//                                        setDataSource(report?.audioUrl ?: "")
+//                                        prepareAsync()
+//                                        setOnPreparedListener{
+//                                            start()
+//                                            isPlaying = true
+//                                        }
+//                                    }
+//                                }
                                 try {
-                                    Log.d("ManageReportScreen", "Playing audio: ${report?.audioUrl}")
+                                    Log.d("ManageReportScreen", "Playing Audio: ${report?.audioUrl}")
                                     mediaPlayer.reset()
-                                    mediaPlayer.setDataSource(report?.audioUrl ?: "")
+                                   val decodedUrl = URLDecoder.decode(report?.audioUrl ?: "", StandardCharsets.UTF_8.toString())
+                                    Log.d("ManageReportSCreen", "Decoded audio Url: $decodedUrl")
+                                    mediaPlayer.setDataSource(decodedUrl)
                                     mediaPlayer.prepare()
                                     mediaPlayer.start()
+                                    isPlaying = true
                                 } catch (e: Exception) {
                                     Log.e("ManageReportScreen", "Audio Playback Failed", e)
+                                    Toast.makeText(context, "Audio Playback Failed: ${e.message}", Toast.LENGTH_LONG).show()
                                 }
                             }
                         ) {
@@ -218,9 +286,14 @@ fun manageReportScreen(navController: NavController, reportId: String/* report: 
                         }
                         OutlinedButton(
                             onClick = {
+//                                if (mediaPlayer.isPlaying) {
+//                                    mediaPlayer.stop()
+//                                    Log.d("ManageReportScreen", "Stopped Ausio Playback")
+//                                }
                                 if (mediaPlayer.isPlaying) {
                                     mediaPlayer.stop()
-                                    Log.d("ManageReportScreen", "Stopped Ausio Playback")
+                                    isPlaying = false
+                                    Log.d("ManageReportScreen", "Stopped Audio Playback")
                                 }
                             }
                         ) {

@@ -70,7 +70,9 @@ fun ClientReportDescScreen(navController: NavController, uid: String, downloadUr
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = {}
+                    onClick = {
+                        navController.popBackStack()
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,

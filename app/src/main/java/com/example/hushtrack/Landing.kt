@@ -1,6 +1,10 @@
 package com.example.hushtrack
 
 import android.widget.Toast
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,6 +22,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,11 +36,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 
 @Composable
 fun LandingScreen(navController: NavController) {
     val context = LocalContext.current
+    val requiredPermissions = listOf(
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.POST_NOTIFICATIONS
+    )
+
+    var permissionsGranted by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        permissionsGranted = result.all { it.value}
+    }
+
+    LaunchedEffect(Unit) {
+        val allGranted = requiredPermissions.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+        if (!allGranted) {
+            permissionLauncher.launch(requiredPermissions.toTypedArray())
+        } else {
+            permissionsGranted = true
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -82,7 +116,7 @@ fun LandingScreen(navController: NavController) {
                 Button(
                     onClick = {
                         navController.navigate("signup")
-                        Toast.makeText(context, "Registered Successfully", Toast.LENGTH_LONG).show() },
+                              },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF556B2F),

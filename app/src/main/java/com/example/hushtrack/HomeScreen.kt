@@ -1,6 +1,9 @@
 package com.example.hushtrack
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,14 +61,23 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.hushtrack.ReportLogic.Report
+import com.example.hushtrack.notifications.showStatusUpdateNotification
+import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun MajorScreen(modifier: Modifier = Modifier, navController: NavController, uid: String, authManager: FireBaseAuthManager) {
+    val activity = (LocalContext.current as? Activity)
+
+    BackHandler {
+        activity?.finish()
+    }
+
     val drawerState = rememberDrawerState(
         initialValue = DrawerValue.Closed
     )
@@ -117,7 +129,8 @@ fun DrawerContent(modifier: Modifier = Modifier, navController: NavController) {
         Text(
             text = "HushTrack",
             fontSize = 24.sp,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            fontWeight = FontWeight.Bold
         )
 
         HorizontalDivider()
@@ -125,13 +138,6 @@ fun DrawerContent(modifier: Modifier = Modifier, navController: NavController) {
         Spacer(modifier = Modifier.height(5.dp))
 
         NavigationDrawerItem(
-            icon = {
-                Icon(
-                    imageVector = Icons.Rounded.Settings,
-                    contentDescription = "Account",
-                    modifier = Modifier.size(24.dp)
-                )
-            },
             label = {
                 Text(
                     text = "Settings",
@@ -147,13 +153,6 @@ fun DrawerContent(modifier: Modifier = Modifier, navController: NavController) {
         Spacer(modifier = Modifier.height(3.dp))
 
         NavigationDrawerItem(
-            icon = {
-                Icon(
-                    imageVector = Icons.Rounded.Notifications,
-                    contentDescription = "Notifications",
-                    modifier = Modifier.size(24.dp)
-                )
-            },
             label = {
                 Text(
                     text = "Notifications",
@@ -211,6 +210,7 @@ fun DrawerContent(modifier: Modifier = Modifier, navController: NavController) {
 fun ScreenContent(modifier: Modifier = Modifier, uid: String, authManager: FireBaseAuthManager, navController: NavController) {
     var username by remember { mutableStateOf("") }
     var reports by remember { mutableStateOf<List<Report>>(emptyList()) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         username = authManager.getUsername(uid) ?: "User"
@@ -220,9 +220,25 @@ fun ScreenContent(modifier: Modifier = Modifier, uid: String, authManager: FireB
         FirebaseFirestore.getInstance()
             .collection("Reports")
             .whereEqualTo("uid", uid)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                reports = snapshot.documents.mapNotNull { it.toObject(Report::class.java) }
+            .addSnapshotListener{ snapshot, error ->
+                if (error != null || snapshot == null) return@addSnapshotListener
+
+                reports = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(Report::class.java)?.copy(id = doc.id)
+                }
+
+                val updatedReports = mutableListOf<Report>()
+                for (change in snapshot.documentChanges) {
+                    val doc = change.document
+                    val report = doc.toObject(Report::class.java)?.copy(id = doc.id)
+                    if (report != null) {
+                        updatedReports.add(report)
+
+                        if (change.type == DocumentChange.Type.MODIFIED) {
+                            showStatusUpdateNotification(context, report.status)
+                        }
+                    }
+                }
             }
     }
 //   Add the contents of the screen here
@@ -308,7 +324,7 @@ fun TopBar(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "HushTrack", textAlign = TextAlign.Center)
+                Text(text = "HushTrack", textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
             }
         },
         actions = {

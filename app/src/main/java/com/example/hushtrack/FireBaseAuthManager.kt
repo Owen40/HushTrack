@@ -1,13 +1,17 @@
 package com.example.hushtrack
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.example.hushtrack.ReportLogic.Report
+import com.example.hushtrack.notifications.showStatusUpdateNotification
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import java.io.File
@@ -149,15 +153,23 @@ class FireBaseAuthManager {
 
 
 //    Listen to Reports
-    fun listenToAllReports() {
+    fun listenToAllReports(context: Context, currenntUserId: String) {
         val reports = mutableListOf<Report>()
         FirebaseFirestore.getInstance().collection("Reports")
             .addSnapshotListener { snapshot, error ->
                 if (error != null || snapshot == null ) return@addSnapshotListener
-                reports.addAll(snapshot.documents.mapNotNull { doc ->
-                    val report = doc.toObject(Report::class.java)
-                    report?.copy(id = doc.id)
-                })
+//                reports.addAll(snapshot.documents.mapNotNull { doc ->
+//                    val report = doc.toObject(Report::class.java)
+//                    report?.copy(id = doc.id)
+//                })
+                for (change in snapshot.documentChanges) {
+                    val doc = change.document
+                    val report = doc.toObject(Report::class.java)?.copy(id = doc.id)
+
+                    if (report?.reporter == currenntUserId && change.type == DocumentChange.Type.MODIFIED) {
+                        showStatusUpdateNotification(context, report.status)
+                    }
+                }
             }
     }
 
